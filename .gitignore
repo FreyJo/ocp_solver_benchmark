@@ -1,4 +1,9 @@
 results
 __pycache__
 *.json
+*.png
+*.pdf
+
 c_generated_code
+*.egg-info
+
