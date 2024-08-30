@@ -53,17 +53,13 @@ def setup_pendulum_model() -> AcadosModel:
     dtheta = ca.SX.sym("dtheta")
 
     x = ca.vertcat(x1, theta, v1, dtheta)
+    nx = x.rows()
 
     F = ca.SX.sym("F")
     u = ca.vertcat(F)
 
     # xdot
-    x1_dot = ca.SX.sym("x1_dot")
-    theta_dot = ca.SX.sym("theta_dot")
-    v1_dot = ca.SX.sym("v1_dot")
-    dtheta_dot = ca.SX.sym("dtheta_dot")
-
-    xdot = ca.vertcat(x1_dot, theta_dot, v1_dot, dtheta_dot)
+    xdot = ca.SX.sym("xdot", nx)
 
     # common expression
     cos_theta = ca.cos(theta)
