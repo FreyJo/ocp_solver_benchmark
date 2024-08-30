@@ -35,9 +35,29 @@ class AcadosIntegrator(BaseIntegrator):
             sim.solver_options.T = ref_ocp.solver_options.tf / ref_ocp.dims.N
         sim.solver_options.integrator_type = ref_ocp.solver_options.integrator_type
         sim.solver_options.collocation_type = ref_ocp.solver_options.collocation_type
-        sim.solver_options.num_stages = ref_ocp.solver_options.sim_method_num_stages
-        sim.solver_options.num_steps = ref_ocp.solver_options.sim_method_num_steps
-        sim.solver_options.sim_method_jac_reuse = ref_ocp.solver_options.sim_method_jac_reuse
+
+        if isinstance(ref_ocp.solver_options.sim_method_num_stages, int):
+            sim.solver_options.num_stages = ref_ocp.solver_options.sim_method_num_stages
+        elif isinstance(ref_ocp.solver_options.sim_method_num_stages, (list, np.ndarray)):
+            print(f"{ref_ocp.solver_options.sim_method_num_stages[0]}")
+            sim.solver_options.num_stages = int(ref_ocp.solver_options.sim_method_num_stages[0])
+        else:
+            raise ValueError("sim_method_num_stages must be int or list of int or array of int")
+
+        if isinstance(ref_ocp.solver_options.sim_method_num_steps, int):
+            sim.solver_options.num_steps = ref_ocp.solver_options.sim_method_num_steps
+        elif isinstance(ref_ocp.solver_options.sim_method_num_steps, (list, np.ndarray)):
+            sim.solver_options.num_steps = int(ref_ocp.solver_options.sim_method_num_steps[0])
+        else:
+            raise ValueError("sim_method_num_steps must be int or list of int or array of int")
+
+        if isinstance(ref_ocp.solver_options.sim_method_jac_reuse, int):
+            sim.solver_options.num_steps = ref_ocp.solver_options.sim_method_jac_reuse
+        elif isinstance(ref_ocp.solver_options.sim_method_jac_reuse, (list, np.ndarray)):
+            sim.solver_options.num_steps = int(ref_ocp.solver_options.sim_method_jac_reuse[0])
+        else:
+            raise ValueError("sim_method_jac_reuse must be int or list of int or array of int")
+
         sim.solver_options.newton_iter = ref_ocp.solver_options.sim_method_newton_iter
         # integrator specific options
         sim.solver_options.sens_forw = False
