@@ -71,7 +71,10 @@ def closed_loop_experiment(solver: BaseSolver,
                            x0: np.ndarray,
                            n_runs: int,
                            id: str,
-                           print_stats_run_idx: Optional[List[int]] = None
+                           print_stats_run_idx: Optional[List[int]] = None,
+                           u_disturbance: Optional[np.ndarray] = None,
+                           print_stats_on_failure = True,
+                           print_stats_on_solver_max_iter = False
                            ):
 
     results_filename = get_results_filename(id, n_executions=n_runs)
@@ -115,14 +118,19 @@ def closed_loop_experiment(solver: BaseSolver,
                 solver.real_time_preparation(t_current)
                 u = solver.real_time_feedback(x_current, t_current)
 
-            if j in print_stats_run_idx:
+            status = solver.get_status()
+            if j in print_stats_run_idx or \
+                (print_stats_on_solver_max_iter and status == 2) or \
+                (print_stats_on_failure and status not in [0, 2]):
                 solver.print_statistics()
 
-            status = solver.get_status()
-            if status != 0 and j == 0:
-                print(f"got status {status} in simulation step {i}.")
-                breakpoint()
+            # if status != 0 and j == 0:
+                # print(f"got status {status} in simulation step {i}.")
+                # breakpoint()
                 # pass
+
+            if u_disturbance is not None:
+                u += u_disturbance[i, :]
 
             x_augmented_current = plant.simulate(
                 np.concatenate((x_current, np.array([c_current]))),
