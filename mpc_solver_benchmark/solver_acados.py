@@ -29,7 +29,7 @@ class AcadosSolver(BaseSolver):
     def solve_for_x0(self, x0: np.ndarray, t: float) -> np.ndarray:
         self.__x0 = x0
         self._prepare_solve(x0, t)
-        u0 = self.solver.solve_for_x0(x0, fail_on_nonzero_status=False)
+        u0 = self.solver.solve_for_x0(x0, fail_on_nonzero_status=False, print_stats_on_failure=False)
         return u0
 
     def solve(self):
