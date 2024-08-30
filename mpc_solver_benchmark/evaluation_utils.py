@@ -58,14 +58,21 @@ def get_timings_data(results: List[SimulationResultsBase], labels: List[str], me
     else:
         raise ValueError(f"Timings unit {timings_unit} not supported")
 
-    time_tot = factor * np.array(combined_dict["time_preparation"]) + factor * np.array(combined_dict["time_feedback"])
+    if isinstance(results[0], SimulationResultsClosedLoop):
+        time_tot = factor * np.array(combined_dict["time_preparation"]) + factor * np.array(combined_dict["time_feedback"])
+        time_preparation = factor * np.array(combined_dict["time_preparation"])
+        time_feedback = factor * np.array(combined_dict["time_feedback"])
+    else:
+        time_tot = factor * np.array(combined_dict["time_tot"])
+        time_preparation = None
+        time_feedback = None
+
     time_reg = factor * np.array(combined_dict["time_reg"])
     time_sim = factor * np.array(combined_dict["time_sim"])
     time_lin = factor * np.array(combined_dict["time_lin"])
     time_qp_solver_call = factor * np.array(combined_dict["time_qp_solver_call"])
     time_qp = factor * np.array(combined_dict["time_qp"])
-    time_preparation = factor * np.array(combined_dict["time_preparation"])
-    time_feedback = factor * np.array(combined_dict["time_feedback"])
+    time_remaining = time_tot - time_lin - time_qp - time_reg
 
     if closed_loop:
         if metric == "mean":
@@ -77,7 +84,7 @@ def get_timings_data(results: List[SimulationResultsBase], labels: List[str], me
         elif metric == "median":
             metric_fun = np.median
 
-        time_remaining = metric_fun(time_tot - time_lin - time_qp - time_reg, axis=1)
+        time_remaining = metric_fun(time_remaining, axis=1)
         time_tot = metric_fun(time_tot, axis=1)
         time_reg = metric_fun(time_reg, axis=1)
         time_sim = metric_fun(time_sim, axis=1)
@@ -96,6 +103,8 @@ def get_timings_data(results: List[SimulationResultsBase], labels: List[str], me
             time_qp_solver_call = time_qp_solver_call / combined_dict["nlp_iter"]
             time_preparation = time_preparation / combined_dict["nlp_iter"]
             time_feedback = time_feedback / combined_dict["nlp_iter"]
+            time_remaining = time_remaining / combined_dict["nlp_iter"]
+
 
     time_qp_remaining = time_qp - time_qp_solver_call
     time_remaining_lin = time_lin - time_sim
@@ -121,6 +130,8 @@ def plot_acados_timings_submodules(results: List[SimulationResultsBase], labels:
         ylabel = "Time per NLP solver iteration"
     elif closed_loop:
         ylabel = f"{metric} time per closed-loop iter. [{timings_unit}]"
+    else:
+        ylabel = f"timing [{timings_unit}]"
 
 
     data = get_timings_data(results, labels, metric=metric, per_iteration=per_iteration, timings_unit=timings_unit)
@@ -156,17 +167,18 @@ def plot_acados_timings_real_time_split(results: List[SimulationResultsBase], la
 
 
 def print_acados_timings_table_submodules(results: List[SimulationResultsBase], labels: List[str],
-                               style: str ="markdown", metric="mean", per_iteration=False, timings_unit="ms"):
+                               style: str ="markdown", metric="mean", per_iteration=False, timings_unit="us"):
     if style not in ["latex", "markdown"]:
         raise ValueError(f"Style {style} not supported")
 
     data = get_timings_data(results, labels, metric=metric, per_iteration=per_iteration, timings_unit=timings_unit)
 
-    print_time_reg = any([sum(getattr(r, "time_reg")) != 0 for r in results])
+    print_time_reg = any([np.sum(getattr(r, "time_reg")) != 0 for r in results])
     column_names = ["Variant"] + [d[1] for d in data]
 
     if not print_time_reg:
         data = [d for d in data if d[1] != "regularization"]
+    data = [d for d in data if d[1] not in ["preparation", "feedback"]]
     n_columns = len(column_names)
 
     table_string = ""
