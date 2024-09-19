@@ -80,7 +80,7 @@ def formulate_crane_ocp(params: CraneOcpOptions) -> AcadosOcp:
 
     ocp = AcadosOcp()
     ocp.model = model
-    ocp.dims.N = params.N_horizon
+    ocp.solver_options.N_horizon = params.N_horizon
     ocp.solver_options.tf = params.N_horizon
 
     ocp.cost.cost_type = 'EXTERNAL'

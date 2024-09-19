@@ -392,7 +392,7 @@ def formulate_single_phase_unicycle_ocp(options: UnicycleOcpOptions, model_type)
     nu = model.u.rows()
 
     # set dimensions
-    ocp.dims.N = N_horizon
+    ocp.solver_options.N_horizon = N_horizon
     ocp.solver_options.tf = options.T_horizon
 
     # set cost
@@ -508,7 +508,7 @@ def formulate_diff_drive_actuators_ocp(options: UnicycleOcpOptions) -> AcadosOcp
     nu = model.u.rows()
 
     # set dimensions
-    ocp.dims.N = N_horizon
+    ocp.solver_options.N_horizon = N_horizon
     ocp.solver_options.tf = options.T_horizon
 
     # set cost

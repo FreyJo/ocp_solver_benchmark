@@ -165,7 +165,7 @@ def formulate_cstr_ocp_single_phase(model: AcadosModel, cstr_params: CstrParamet
     t0 = ocp.model.t0
 
     # set prediction horizon
-    ocp.dims.N = ocp_options.N_horizon
+    ocp.solver_options.N_horizon = ocp_options.N_horizon
     ocp.solver_options.tf = ocp_options.T_horizon
     ocp.solver_options.time_steps = np.array([ocp_options.dt0] + (ocp_options.N_horizon-1) * [(ocp_options.T_horizon - ocp_options.dt0) / (ocp_options.N_horizon-1)])
 

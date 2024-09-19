@@ -40,8 +40,8 @@ def create_options_list():
 
 
 def initialize_solver(solver: AcadosSolver, x0):
-    x_init = np.linspace(x0, 0*x0, solver.ocp.dims.N+1)
-    for i in range(solver.ocp.dims.N+1):
+    x_init = np.linspace(x0, 0*x0, solver.ocp.solver_options.N_horizon+1)
+    for i in range(solver.ocp.solver_options.N_horizon+1):
         solver.solver.set(i, "x", x_init[i, :].flatten())
 
 

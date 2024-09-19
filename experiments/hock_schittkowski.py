@@ -123,7 +123,7 @@ def create_acados_ocp(filename, x, f, g, lbg, ubg, lbx, ubx, opts: HockSchittkow
 
     # discretization
     Tf = 1
-    ocp.dims.N = N_HORIZON
+    ocp.solver_options.N_horizon = N_HORIZON
     ocp.solver_options.tf = Tf
 
     # cost

@@ -32,7 +32,7 @@ class AcadosIntegrator(BaseIntegrator):
         if ref_ocp.solver_options.time_steps is not None:
             sim.solver_options.T = ref_ocp.solver_options.time_steps[0]
         else:
-            sim.solver_options.T = ref_ocp.solver_options.tf / ref_ocp.dims.N
+            sim.solver_options.T = ref_ocp.solver_options.tf / ref_ocp.solver_options.N_horizon
         sim.solver_options.integrator_type = ref_ocp.solver_options.integrator_type
         sim.solver_options.collocation_type = ref_ocp.solver_options.collocation_type
         sim.solver_options.num_stages = ref_ocp.solver_options.sim_method_num_stages

@@ -214,7 +214,7 @@ def formulate_zanelli_tightening_pendulum_ocp(options: ZanelliTighteningPendulum
 
     if options.N_exact == options.N_horizon:
         ocp = formulate_ocp_without_solver_opts()
-        ocp.dims.N = options.N_horizon
+        ocp.solver_options.N_horizon = options.N_horizon
     elif options.N_exact < options.N_horizon:
         ocp = AcadosMultiphaseOcp(N_list=[options.N_exact, options.N_horizon - options.N_exact])
         ocp.set_phase(formulate_ocp_without_solver_opts(), 0)
