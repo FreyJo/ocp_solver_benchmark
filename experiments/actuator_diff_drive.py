@@ -266,6 +266,6 @@ def evaluate_closed_loop_experiment_diff_drive(n_runs: int):
 
 
 if __name__ == "__main__":
-    n_runs = 2
+    n_runs = 5
     # closed_loop_experiment_diff_drive(n_runs)
     evaluate_closed_loop_experiment_diff_drive(n_runs)
