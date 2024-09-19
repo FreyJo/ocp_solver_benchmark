@@ -92,6 +92,7 @@ def closed_loop_experiment(solver: BaseSolver,
     x_traj[0, :] = x0
     nu = solver.get_nu()
     u_traj = np.zeros((n_sim, nu))
+    status_traj = np.zeros((n_sim,))
 
     if solver.has_reference:
         y_ref_traj = np.zeros((n_sim, solver.reference.ny))
@@ -123,6 +124,7 @@ def closed_loop_experiment(solver: BaseSolver,
                 print(f"got status {status} in simulation step {i}.")
                 breakpoint()
                 # pass
+            status_traj[i] = status
 
             x_augmented_current = plant.simulate(
                 np.concatenate((x_current, np.array([c_current]))),
@@ -172,5 +174,6 @@ def closed_loop_experiment(solver: BaseSolver,
         u_traj=u_traj,
         y_ref_traj=y_ref_traj,
         t_traj=plant.T*np.arange(n_sim+1),
+        status=status_traj,
     )
     results.save_to_file(results_filename)
