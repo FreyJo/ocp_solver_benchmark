@@ -213,20 +213,54 @@ def evaluate_closed_loop_experiment_diff_drive(n_runs: int):
         alphas_all = n_opts * [alphas[0]]
         alpha_legend = None
 
-    plot_pareto(points,
-                colors_all, alphas_all, markers_all,
-                marker_legend=marker_legend,
-                color_legend=color_legend,
-                alpha_legend=alpha_legend,
-                markersizes=markersizes_all,
-                markersize_legend=markersize_legend,
-                xlabel=r"Relative suboptimality [\%]",
-                xscale="log",
-                ncol_legend=2,
-                figsize=(9, 5),
-                ylabel=ylabel, fig_filename="diff_drive_pareto.pdf")
+    if 0:
+        plot_pareto(points,
+                    colors_all, alphas_all, markers_all,
+                    marker_legend=marker_legend,
+                    color_legend=color_legend,
+                    alpha_legend=alpha_legend,
+                    markersizes=markersizes_all,
+                    markersize_legend=markersize_legend,
+                    xlabel=r"Relative suboptimality [\%]",
+                    xscale="log",
+                    ncol_legend=2,
+                    figsize=(9, 5),
+                    ylabel=ylabel, fig_filename="diff_drive_pareto.pdf")
+    else:
+        for nlp_solver in ['SQP', 'SQP_RTI']:
+            points_ = []
+            c_ = []
+            a_ = []
+            m_ = []
+            for i, opts in enumerate(options):
+                if opts.nlp_solver_type == nlp_solver:
+                    points_.append(points[i])
+                    c_.append(colors_all[i])
+                    a_.append(alphas_all[i])
+                    m_.append(markers_all[i])
 
+            if nlp_solver == 'SQP_RTI':
+                with_legend = True
+                xlim = [2, 100]
+            else:
+                with_legend = False
+                xlim = [0.1, 1e2]
 
+            plot_pareto(points_,
+                    c_, a_, m_,
+                    marker_legend=marker_legend if with_legend else None,
+                    color_legend=color_legend if with_legend else None,
+                    alpha_legend=alpha_legend if with_legend else None,
+                    markersizes=markersizes_all if with_legend else None,
+                    markersize_legend=markersize_legend,
+                    xlabel=r"Relative suboptimality [\%]",
+                    xscale="log",
+                    ncol_legend=1,
+                    title='RTI' if nlp_solver=="SQP_RTI" else nlp_solver,
+                    figsize=(6.6, 5),
+                    bbox_to_anchor=(1., 1.0),
+                    ylabel=ylabel, fig_filename=f"diff_drive_pareto_{nlp_solver}.pdf",
+                    xlim=xlim)
     plt.show()
 
 

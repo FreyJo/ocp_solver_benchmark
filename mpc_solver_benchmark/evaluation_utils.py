@@ -463,6 +463,7 @@ def plot_pareto(
     figsize=None,
     bbox_to_anchor=None,
     xscale="symlog",
+    xlim=None,
 ):
     if figsize is None:
         figsize = (6.6, 4.5)
@@ -512,7 +513,11 @@ def plot_pareto(
     plt.grid()
     if ncol_legend is None:
         ncol_legend = 1
-    plt.legend(handles=legend_elements, ncol=ncol_legend, bbox_to_anchor=bbox_to_anchor)
+    if len(legend_elements) > 0:
+        plt.legend(handles=legend_elements, ncol=ncol_legend, bbox_to_anchor=bbox_to_anchor)
+
+    if xlim is not None:
+        axes.set_xlim(xlim)
 
     if title is not None:
         axes.set_title(title)
