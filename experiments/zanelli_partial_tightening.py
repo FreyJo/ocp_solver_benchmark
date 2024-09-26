@@ -82,8 +82,7 @@ def evaluate_closed_loop_experiment_ptight_timings(n_runs: int):
     plot_acados_timings_submodules(results, labels, n_runs=n_runs, metric=metric)
     plot_acados_timings_real_time_split(results, labels, n_runs=n_runs, metric=metric,
             fig_filename=os.path.join("figures", "zanelli_ptight_rti_timings.pdf"),
-            figsize=(10, 4.5),
-                                        )
+            figsize=(8, 4), title=" ",)
     print_acados_timings_table_real_time_split(results, labels, metric=metric, style=table_style, include_relative_suboptimality=True)
     print_acados_timings_table_submodules(results, labels, metric=metric, style=table_style)
     plt.show()

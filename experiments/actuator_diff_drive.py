@@ -1,4 +1,4 @@
-from mpc_solver_benchmark import get_results_filename, get_results_from_filenames, plot_trajectories, AcadosSolver, plot_trajectories_xy_space, AcadosIntegrator, SimulationResultsClosedLoop, closed_loop_experiment, print_closed_loop_costs_timings_table, dataclass_to_string, plot_pareto, get_varying_fields, hash_id
+from mpc_solver_benchmark import get_results_filename, get_results_from_filenames, plot_trajectories, AcadosSolver, plot_trajectories_xy_space, AcadosIntegrator, SimulationResultsClosedLoop, closed_loop_experiment, print_closed_loop_costs_timings_table, dataclass_to_string, plot_pareto, plot_simplest_pareto, get_varying_fields, hash_id
 from mpc_solver_benchmark.problems import formulate_unicycle_ocp, UnicycleOcpOptions, unicycle_get_circular_constraints
 import numpy as np
 import matplotlib.pyplot as plt
@@ -173,10 +173,11 @@ def evaluate_closed_loop_experiment_diff_drive(n_runs: int):
     variants['N_horizon'] = sorted(variants["N_horizon"], reverse=True)
     print(f"{variants['N_horizon']=}")
     print(f"{variants['N_horizon_0']=}")
-    cmaps = [matplotlib.colormaps["Oranges"], matplotlib.colormaps["Blues"], matplotlib.colormaps["Greens"], matplotlib.colormaps["Purples"]]
+    cmaps = [matplotlib.colormaps["Oranges"], matplotlib.colormaps["Blues"], matplotlib.colormaps["Greens"], matplotlib.colormaps["Purples"], matplotlib.colormaps["Reds"]]
 
     def get_float_from_0tomax_interval(max, entry):
-        out = entry / max
+        min_float = 0.3
+        out = min_float + (1-min_float)* entry / max
         return out
 
     color_legend = dict()
@@ -227,17 +228,46 @@ def evaluate_closed_loop_experiment_diff_drive(n_runs: int):
                     figsize=(9, 5),
                     ylabel=ylabel, fig_filename="diff_drive_pareto.pdf")
     else:
+        # plot for second revision of the paper with separate plots for SQP and RTI
+        def option_to_marker(opts):
+            if opts.N_horizon_0 is None:
+                return "o"
+            elif opts.N_horizon == 50:
+                return '<'
+            elif opts.N_horizon == 40:
+                return 'v'
+            elif opts.N_horizon == 30:
+                return '^'
+            elif opts.N_horizon == 20:
+                return 'P'
+            elif opts.N_horizon == 10:
+                return 'X'
+            else:
+                raise ValueError(f"Unknown marker for {opts=}")
+
         for nlp_solver in ['SQP', 'SQP_RTI']:
             points_ = []
-            c_ = []
-            a_ = []
-            m_ = []
+            colors_plot = []
+            labels_plot = []
+            markers_plot = []
             for i, opts in enumerate(options):
                 if opts.nlp_solver_type == nlp_solver:
                     points_.append(points[i])
-                    c_.append(colors_all[i])
-                    a_.append(alphas_all[i])
-                    m_.append(markers_all[i])
+                    labels_plot.append(
+                        r'OCP $N = ' + f"{opts.N_horizon}$" if opts.N_horizon_0 is None
+                        else r'MOCP $N= ' + f"{opts.N_horizon}$, " + r'$N_{\mathrm{act}} = ' + f"{opts.N_horizon_0}$"
+                    )
+                    i_cmap = variants['N_horizon'].index(opts.N_horizon)
+                    color = cmaps[i_cmap](get_float_from_0tomax_interval(opts.N_horizon, opts.N_horizon_0 if opts.N_horizon_0 is not None else opts.N_horizon))
+                    if opts.N_horizon == 30:
+                        color = 'purple'
+                    elif opts.N_horizon == 20:
+                        color = 'yellow'
+                    elif opts.N_horizon == 10:
+                        color = 'green'
+                    # color = colors_all[i]
+                    colors_plot.append(color)
+                    markers_plot.append(option_to_marker(opts))
 
             if nlp_solver == 'SQP_RTI':
                 with_legend = True
@@ -246,14 +276,8 @@ def evaluate_closed_loop_experiment_diff_drive(n_runs: int):
                 with_legend = False
                 xlim = [0.1, 1e2]
 
-            plot_pareto(points_,
-                    c_, a_, m_,
-                    marker_legend=marker_legend if with_legend else None,
-                    color_legend=color_legend if with_legend else None,
-                    alpha_legend=alpha_legend if with_legend else None,
-                    markersizes=markersizes_all if with_legend else None,
-                    markersize_legend=markersize_legend,
-                    xlabel=r"Relative suboptimality [\%]",
+            plot_simplest_pareto(points_, labels_plot, colors_plot, markers_plot,
+                                xlabel=r"Relative suboptimality [\%]",
                     xscale="log",
                     ncol_legend=1,
                     title='RTI' if nlp_solver=="SQP_RTI" else nlp_solver,

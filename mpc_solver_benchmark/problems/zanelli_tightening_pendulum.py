@@ -66,6 +66,8 @@ def formulate_ocp_without_solver_opts(cost_module="CONL") -> AcadosOcp:
 
     # set model
     model = setup_pendulum_model()
+    model.x_labels[0] = '$p$ [m]'
+    model.u_labels = [r"$\nu$ [N]"]
     ocp.model = model
 
     # set cost

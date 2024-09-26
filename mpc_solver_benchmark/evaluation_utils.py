@@ -112,6 +112,12 @@ def get_timings_data(results: List[SimulationResultsBase], labels: List[str], me
             (time_tot, "total")
     ]
 
+
+def metric_to_tex_string(metric: str) -> str:
+    if metric == "max":
+        return "maximum"
+    return metric
+
 def plot_acados_timings_submodules(results: List[SimulationResultsBase], labels: List[str], n_runs, figure_filename: Optional[str]=None, metric="mean", per_iteration=False, timings_unit="ms"):
 
     closed_loop = isinstance(results[0], SimulationResultsClosedLoop)
@@ -120,7 +126,7 @@ def plot_acados_timings_submodules(results: List[SimulationResultsBase], labels:
     if per_iteration:
         ylabel = "Time per NLP solver iteration"
     elif closed_loop:
-        ylabel = f"{metric} time per closed-loop iter. [{timings_unit}]"
+        ylabel = f"{metric_to_tex_string(metric)} time per closed-loop iter. [{timings_unit}]"
 
 
     data = get_timings_data(results, labels, metric=metric, per_iteration=per_iteration, timings_unit=timings_unit)
@@ -134,21 +140,24 @@ def get_relative_suboptimality(results: List[SimulationResultsClosedLoop]):
     return [1e2 * (result.cost_traj[-1]-min_cost) / min_cost for result in results]
 
 
-def plot_acados_timings_real_time_split(results: List[SimulationResultsBase], labels: List[str], n_runs, figure_filename: Optional[str]=None, metric="mean", per_iteration=False, timings_unit="ms", fig_filename=None,
+def plot_acados_timings_real_time_split(results: List[SimulationResultsBase], labels: List[str], n_runs, figure_filename: Optional[str]=None, metric="mean", per_iteration=False, timings_unit="ms", fig_filename=None, title=None,
                                         figsize=None):
 
     closed_loop = isinstance(results[0], SimulationResultsClosedLoop)
 
-    title = f"Time taken for each solver (runs: {n_runs})"
+    title_ = f"Time taken for each solver (runs: {n_runs})"
     if per_iteration:
         ylabel = "Time per NLP solver iteration"
     elif closed_loop:
-        ylabel = f"{metric} time per closed-loop iter. [{timings_unit}]"
+        ylabel = f"{metric_to_tex_string(metric)} time per closed-loop iter. [{timings_unit}]"
 
     data = get_timings_data(results, labels, metric=metric, per_iteration=per_iteration, timings_unit=timings_unit)
     data = [d for d in data if not np.all(d[0] == 0)]
     data = [d for d in data if d[1] in ["preparation", "feedback"]]
-    plot_bar_plot_helper(data, labels, ylabel, title, figure_filename=figure_filename, figsize=figsize)
+    plot_bar_plot_helper(data, labels, ylabel, title_, figure_filename=figure_filename, figsize=figsize)
+
+    if title is not None:
+        plt.title(title)
 
     if fig_filename is not None:
         plt.savefig(fig_filename, bbox_inches="tight", transparent=True, pad_inches=0.05)
@@ -585,3 +594,83 @@ def plot_contraction_rate(results: List[SimulationResultsOpenLoop], labels_list:
 
     if y_scale_log:
         axes.set_yscale('log')
+
+def plot_simplest_pareto(
+    points,
+    labels,
+    colors,
+    markers,
+    fig_filename: Optional[str] = None,
+    xlabel=None,
+    ylabel=None,
+    title=None,
+    xlim=None,
+    figsize=None,
+    bbox_to_anchor=None,
+    ncol_legend=None,
+    xscale="log"
+):
+    latexify_plot()
+    if figsize is None:
+        figsize = (6.6, 4.5)
+    fig, axes = plt.subplots(ncols=1, nrows=1, figsize=figsize)
+
+    if xlabel is not None:
+        axes.set_xlabel(xlabel)
+    if ylabel is not None:
+        axes.set_ylabel(ylabel)
+    axes.set_xscale(xscale)
+
+    plt.grid()
+    plt.tight_layout()
+
+    if title is not None:
+        axes.set_title(title)
+
+    assert len(points) == len(labels)
+    assert len(colors) >= len(points)
+    assert len(markers) >= len(points)
+
+    legend_elements = []
+
+    for p, label, marker, color in zip(points, labels, markers, colors):
+        alpha = 1.0
+        fillstyle = "full"
+        color = color
+        axes.plot(
+            p[0],
+            p[1],
+            color=color,
+            marker=marker,
+            alpha=alpha,
+            markersize=10,
+            markeredgewidth=2,
+            fillstyle=fillstyle,
+        )
+        legend_elements += [
+            Line2D(
+                [0],
+                [0],
+                marker=marker,
+                alpha=alpha,
+                markersize=10,
+                markeredgewidth=2,
+                fillstyle=fillstyle,
+                color=color,
+                lw=0,
+                label=label,
+            )
+        ]
+
+    if xlim is not None:
+        axes.set_xlim(xlim)
+
+    if ncol_legend is None:
+        ncol_legend = 1
+    plt.legend(handles=legend_elements, ncol=ncol_legend, bbox_to_anchor=bbox_to_anchor)
+    plt.tight_layout()
+    if fig_filename is not None:
+        plt.savefig(
+            fig_filename, bbox_inches="tight", transparent=True, pad_inches=0.05
+        )
+        print(f"\nstored figure in {fig_filename}")
