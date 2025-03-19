@@ -31,10 +31,7 @@ if __name__ == "__main__":
     opts.qp_solver_cond_N = 1
     opts.qp_solver_mu0 = 1e4
     opts.hessian_approx = 'EXACT'
-    opts.integrator_type = 'ERK'
     opts.print_level = 1
-    opts.N_horizon = 1
-    opts.tf = 1
     opts.nlp_solver_max_iter = 500
     opts.regularize_method = 'MIRROR'
     opts.nlp_solver_type = 'SQP_WITH_FEASIBLE_QP'

@@ -369,6 +369,7 @@ def formulate_time_optimal_swing_up(options: AcadosOcpOptions):
     ocp.solver_options = options
     ocp.solver_options.N_horizon = params.N
     ocp.solver_options.tf = params.Tf
+    ocp.solver_options.integrator_type = 'ERK'
 
     return ocp
 
