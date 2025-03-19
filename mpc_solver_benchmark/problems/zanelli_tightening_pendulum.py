@@ -51,8 +51,8 @@ class ZanelliTighteningPendulumOcpOptions:
 
 @dataclass
 class PendulumParameters:
-    xs: np.ndarray = np.array([0.0, 0.0, 0.0, 0.0])
-    us: np.ndarray = np.array([0.0])
+    xs = np.array([0.0, 0.0, 0.0, 0.0])
+    us = np.array([0.0])
 
 @dataclass
 class PendulumMpcParameters:

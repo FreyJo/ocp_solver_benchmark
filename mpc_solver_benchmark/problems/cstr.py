@@ -21,8 +21,8 @@ class CstrParameters:
     dH: float = -5 * 1e4  # kJ / kmol
     # to avoid division by zero
     eps: float = 1e-5  # m
-    xs: np.ndarray = np.array([0.878, 324.5, 0.659])
-    us: np.ndarray = np.array([300, 0.1])
+    xs = np.array([0.878, 324.5, 0.659])
+    us = np.array([300, 0.1])
 
 
 def setup_cstr_model(params: CstrParameters) -> AcadosModel:

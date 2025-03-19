@@ -34,17 +34,26 @@ import scipy
 
 from dataclasses import dataclass
 
-from acados_template import AcadosOcp, AcadosModel
+from acados_template import AcadosOcp, AcadosModel, AcadosOcpOptions, AcadosOcpSolver, ACADOS_INFTY
 
+@dataclass
+class PendulumModelParameters:
+    # constants
+    M : float = 1.0 # mass of the cart [kg]
+    m : float = 0.1 # mass of the ball [kg]
+    g : float = 9.81 # gravity constant [m/s^2]
+    l : float = 0.8 # length of the rod [m]
 
 def setup_pendulum_model() -> AcadosModel:
     model_name = "pendulum"
 
+    params = PendulumModelParameters()
+
     # constants
-    M = 1.0  # mass of the cart [kg] -> now estimated
-    m = 0.1  # mass of the ball [kg]
-    g = 9.81  # gravity constant [m/s^2]
-    l = 0.8  # length of the rod [m]
+    M = params.M
+    m = params.m
+    g = params.g
+    l = params.l
 
     # set up states & controls
     x1 = ca.SX.sym("x1")
@@ -99,6 +108,61 @@ def setup_pendulum_model() -> AcadosModel:
 
     # add meta information
     model.x_labels = [r'$p_{\mathrm{x}}$ [m]', r'$\theta$ [rad]', '$v$ [m]', r'$\dot{\theta}$ [rad/s]']
+    model.u_labels = ['$F$ [N]']
+    model.t_label = '$t$ [s]'
+
+    return model
+
+def setup_free_time_pendulum_ode_model() -> AcadosModel:
+
+    model_name = 'free_time_pendulum'
+
+    pars = PendulumModelParameters()
+
+    # set up states & controls
+    T = ca.SX.sym('T')
+    x1      = ca.SX.sym('x1')
+    theta   = ca.SX.sym('theta')
+    v1      = ca.SX.sym('v1')
+    dtheta  = ca.SX.sym('dtheta')
+
+    x = ca.vertcat(T, x1, theta, v1, dtheta)
+
+    F = ca.SX.sym('F')
+    u = ca.vertcat(F)
+
+    # xdot
+    T_dot       = ca.SX.sym('T_dot')
+    x1_dot      = ca.SX.sym('x1_dot')
+    theta_dot   = ca.SX.sym('theta_dot')
+    v1_dot      = ca.SX.sym('v1_dot')
+    dtheta_dot  = ca.SX.sym('dtheta_dot')
+
+    xdot = ca.vertcat(T_dot, x1_dot, theta_dot, v1_dot, dtheta_dot)
+
+    # dynamics
+    cos_theta = ca.cos(theta)
+    sin_theta = ca.sin(theta)
+    denominator = pars.M + pars.m - pars.m*cos_theta*cos_theta
+    f_expl = ca.vertcat(0,
+                        T*v1,
+                        T*dtheta,
+                        T*((-pars.m*pars.l*sin_theta*dtheta*dtheta + pars.m*pars.g*cos_theta*sin_theta+F)/denominator),
+                        T*((-pars.m*pars.l*cos_theta*sin_theta*dtheta*dtheta + F*cos_theta+(pars.M+pars.m)*pars.g*sin_theta)/(pars.l*denominator))
+                        )
+
+    f_impl = xdot - f_expl
+
+    model = AcadosModel()
+
+    model.f_impl_expr = f_impl
+    model.f_expl_expr = f_expl
+    model.x = x
+    model.xdot = xdot
+    model.u = u
+    model.name = model_name
+
+    model.x_labels = ['$T$ [s]', r'$p_{\mathrm{x}}$ [m]', r'$\theta$ [rad]', '$v$ [m]', r'$\dot{\theta}$ [rad/s]']
     model.u_labels = ['$F$ [N]']
     model.t_label = '$t$ [s]'
 
@@ -240,3 +304,79 @@ def formulate_pendulum_ocp(options: PendulumOcpOptions):
     ocp.solver_options.tf = Tf
     ocp.solver_options.log_primal_step_norm = True
     return ocp
+
+
+@dataclass
+class PendulumParmeters:
+    N : int = 100
+    nx : int = 5
+    nu : int = 1
+    Tf : float = 1.0
+
+    # Parameters
+    max_f : float = 5.
+    max_x1 : float = 1.0
+    max_v : float = 2.0
+
+    x1_0 : float = 0.0
+    theta_0 : float = np.pi
+    dx1_0 : float = 0.0
+    dtheta_0 : float = 0.0
+
+    theta_f : float = 0.0
+    dx1_f : float = 0.0
+    dtheta_f : float = 0.0
+
+def formulate_time_optimal_swing_up(options: AcadosOcpOptions):
+    # create ocp object to formulate the OCP
+    params = PendulumParmeters()
+    ocp = AcadosOcp()
+
+    # set model
+    model = setup_free_time_pendulum_ode_model()
+    ocp.model = model
+
+    ###########################################################################
+    # Define constraints
+    ###########################################################################
+
+    # Initial conditions
+    ocp.constraints.lbx_0 = np.array([0.0, params.x1_0, params.theta_0, params.dx1_0, params.dtheta_0])
+    ocp.constraints.ubx_0 = np.array([ACADOS_INFTY, params.x1_0, params.theta_0, params.dx1_0, params.dtheta_0])
+    ocp.constraints.idxbx_0 = np.array([0, 1, 2, 3, 4])
+
+    # Actuator constraints
+    ocp.constraints.lbu = np.array([-params.max_f])
+    ocp.constraints.ubu = np.array([+params.max_f])
+    ocp.constraints.idxbu = np.array([0])
+
+    ocp.constraints.lbx = np.array([0.0, -params.max_x1, -params.max_v])
+    ocp.constraints.ubx = np.array([ACADOS_INFTY, params.max_x1, params.max_v])
+    ocp.constraints.idxbx = np.array([0, 1, 3])
+
+    # Terminal constraints
+    ocp.constraints.lbx_e = np.array([0.0, params.theta_f, params.dx1_f, params.dtheta_f])
+    ocp.constraints.ubx_e = np.array([ACADOS_INFTY, params.theta_f, params.dx1_f, params.dtheta_f])
+    ocp.constraints.idxbx_e = np.array([0, 2, 3, 4])
+
+    ###########################################################################
+    # Define objective function
+    ###########################################################################
+    ocp.cost.cost_type_e = 'EXTERNAL'
+    ocp.model.cost_expr_ext_cost_e = model.x[0]
+
+    # Setup options
+    ocp.solver_options = options
+    ocp.solver_options.N_horizon = params.N
+    ocp.solver_options.tf = params.Tf
+
+    return ocp
+
+def initialize_time_optimal_swing_up(ocp_solver: AcadosOcpSolver):
+    # Initial guess
+    T0 = 1.0
+    params = PendulumParmeters()
+
+    for i in range(params.N):
+        ocp_solver.set(i, "x", np.array([T0, 0.0, np.pi, 0.0, 0.0]))
+    ocp_solver.set(params.N, "x", np.array([T0, 0.0, np.pi, 0.0, 0.0]))
