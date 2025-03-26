@@ -177,11 +177,10 @@ def formulate_constraint_as_log_barrier(
     # compute violation expression
     log_barrier_input = casadi_symbol("log_barrier_input", 0, 1)
     if upper_bound is not None:
-        log_barrier_input = ca.vertcat(log_barrier_input, constr_expr - upper_bound)
+        log_barrier_input = ca.vertcat(log_barrier_input, -(constr_expr - upper_bound))
     if lower_bound is not None:
-        log_barrier_input = ca.vertcat(log_barrier_input, lower_bound - constr_expr)
+        log_barrier_input = ca.vertcat(log_barrier_input, -(lower_bound - constr_expr))
     y_ref_new = np.zeros((log_barrier_input.shape[0],))
-
 
     # add penalty as cost
     if constraint_type == "path":
